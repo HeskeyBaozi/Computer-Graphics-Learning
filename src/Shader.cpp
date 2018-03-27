@@ -17,9 +17,10 @@ Shader::Shader(const char *vertexShaderUrl, const char *fragmentShaderUrl) {
         stringstream vertexStream, fragmentStream;
 
         vertexStream << vertexFile.rdbuf();
-        fragmentStream << fragmentStream.rdbuf();
+        fragmentStream << fragmentFile.rdbuf();
 
         string vertexShaderCode, fragmentShaderCode;
+
         const char *vertexShaderSource;
         const char *fragmentShaderSource;
 
