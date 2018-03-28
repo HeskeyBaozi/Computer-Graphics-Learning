@@ -37,8 +37,8 @@ int Bresenham::drawLine(vector<GLfloat> &pixi, int x0, int y0, int x1, int y1) {
 
 
     do {
-        float normalizedX = float(isKBiggerThan1 ? y : x) / 100;
-        float normalizedY = float(isKBiggerThan1 ? x : y) / 100;
+        float normalizedX = float(isKBiggerThan1 ? y : x) / 1000;
+        float normalizedY = float(isKBiggerThan1 ? x : y) / 1000;
         pixi.emplace_back(normalizedX);
         pixi.emplace_back(normalizedY);
         pixi.emplace_back(0.0f);
