@@ -7,13 +7,11 @@
 #include "imgui_impl_glfw_gl3.h"
 #include <cstdio>
 #include <iostream>
-#include <GL/gl3w.h>
-#include <GLFW/glfw3.h>
 #include "Window.h"
 #include "Bresenham.h"
 
-#define V_GLSL "D:\\CLionProjects\\hw3\\src\\shaders\\v.glsl"
-#define F_GLSL "D:\\CLionProjects\\hw3\\src\\shaders\\f.glsl"
+#define V_GLSL "D:\\CLionProjects\\hw3\\shaders\\v.glsl"
+#define F_GLSL "D:\\CLionProjects\\hw3\\shaders\\f.glsl"
 
 
 int main() {
@@ -23,18 +21,11 @@ int main() {
      ************************************************************/
 
     Window window(800, 600, "HW3 - Hezhiyu 15331097");
-    gl3wInit();
     if (!window.isSuccessful) {
         std::cout << "Create Window Object Failed" << std::endl;
         return -1;
     }
 
-    // Setup ImGui binding
-    ImGui::CreateContext();
-    ImGui_ImplGlfwGL3_Init(window.getWindow(), true);
-
-    // Setup style
-    ImGui::StyleColorsDark();
     ImVec4 clear_color = ImVec4(255.0f / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f, 1.00f);
 
 

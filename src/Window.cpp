@@ -1,6 +1,9 @@
 
 #include "Window.h"
 
+#include "imgui.h"
+#include "imgui_impl_glfw_gl3.h"
+
 Window::Window(const int width, const int height, const char *name) {
     this->initialize();
     this->window = glfwCreateWindow(width, height, name, nullptr, nullptr);
@@ -11,6 +14,25 @@ Window::Window(const int width, const int height, const char *name) {
     }
 
     glfwMakeContextCurrent(this->window);
+//    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
+//        this->isSuccessful = false;
+//        std::cout << "Failed to initialize GLAD" << std::endl;
+//        return;
+//    }
+    gl3wInit();
+
+
+    ImGui::CreateContext();
+    ImGuiIO &io = ImGui::GetIO();
+    (void) io;
+    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard
+    // Controls  io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable
+    // Gamepad Controls
+    ImGui_ImplGlfwGL3_Init(this->window, true);
+
+    // Setup style
+    ImGui::StyleColorsDark();
+    glViewport(0, 0, width, height);
 }
 
 Window::~Window() = default;

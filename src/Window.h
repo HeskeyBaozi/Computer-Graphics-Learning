@@ -6,6 +6,7 @@
  * @author 何志宇<hezhiyu233@foxmail.com> 15331097
  */
 
+#include <GL/gl3w.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 
