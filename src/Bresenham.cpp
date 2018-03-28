@@ -2,6 +2,10 @@
 
 using namespace std;
 
+/**
+ * 算法采用单例模式
+ * @return 算法实例
+ */
 Bresenham *Bresenham::getInstance() {
     static Bresenham *instance = nullptr;
     if (instance == nullptr) {
@@ -10,6 +14,15 @@ Bresenham *Bresenham::getInstance() {
     return instance;
 }
 
+/**
+ * 收集直线信息
+ * @param pixi 像素信息，每个像素数据结构为[ x, y, z, r, g, b]
+ * @param x0 起始点横坐标，默认范围 [ -1000, 1000 ]
+ * @param y0 起始点纵坐标，默认范围 [ -1000, 1000 ]
+ * @param x1 终点横坐标，默认范围 [ -1000, 1000 ]
+ * @param y1 终点纵坐标，默认范围 [ -1000, 1000 ]
+ * @return 收集的点的个数
+ */
 int Bresenham::drawLine(vector<GLfloat> &pixi, int x0, int y0, int x1, int y1) {
 
     auto dx = static_cast<int>(std::abs(x1 - x0));
@@ -54,6 +67,14 @@ int Bresenham::drawLine(vector<GLfloat> &pixi, int x0, int y0, int x1, int y1) {
     return pointCounter;
 }
 
+/**
+ * 收集圆信息
+ * @param pixi 像素信息，每个像素数据结构为[ x, y, z, r, g, b]
+ * @param x0 中心点横坐标，默认范围 [ -1000, 1000 ]
+ * @param y0 中心点纵坐标，默认范围 [ -1000, 1000 ]
+ * @param r 半径，默认范围 [ 0, 1000 ]
+ * @return 收集的点的个数
+ */
 int Bresenham::drawCircle(vector<GLfloat> &pixi, int x0, int y0, int r) {
     int x = -r, y = 0;
     int pointCounter = 0; // 点个数计数器
@@ -81,15 +102,26 @@ int Bresenham::drawCircle(vector<GLfloat> &pixi, int x0, int y0, int r) {
     return pointCounter;
 }
 
+/**
+ * 添加点到收集集合中，帮助函数
+ * @param pixi 像素信息，每个像素数据结构为[ x, y, z, r, g, b]
+ * @param x 要加入的点的横坐标, 默认范围 [ -1000, 1000 ]
+ * @param y 要加入的点的纵坐标, 默认范围 [ -1000, 1000 ]
+ */
 void Bresenham::addPoints(std::vector<GLfloat> &pixi, int x, int y) {
-    pixi.emplace_back(this->normalize(x));
-    pixi.emplace_back(this->normalize(y));
-    pixi.emplace_back(0.0f);
-    pixi.emplace_back(this->color[0]);
-    pixi.emplace_back(this->color[1]);
-    pixi.emplace_back(this->color[2]);
+    pixi.emplace_back(this->normalize(x)); // x
+    pixi.emplace_back(this->normalize(y)); // y
+    pixi.emplace_back(0.0f); // z
+    pixi.emplace_back(this->color[0]); // r
+    pixi.emplace_back(this->color[1]); // g
+    pixi.emplace_back(this->color[2]); // b
 }
 
+/**
+ * 规格化
+ * @param target 输入整数
+ * @return 规格化后的数（单精度浮点数）
+ */
 float Bresenham::normalize(int target) {
     return float(target) / this->scale;
 }

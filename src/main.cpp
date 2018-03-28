@@ -10,7 +10,6 @@
 #include <GL/gl3w.h>
 #include <GLFW/glfw3.h>
 #include "Bresenham.h"
-#include <vector>
 
 const char *vertexShaderSource = "#version 330 core\n"
         "layout (location = 0) in vec3 aPos;\n"
@@ -189,7 +188,7 @@ int main() {
             }
         }
 
-        std::vector<GLfloat> triplePoints;
+        std::vector<GLfloat> triplePoints; // 三角形点集合
 
         Bresenham::getInstance()->color = {
                 draw_color.x, draw_color.y, draw_color.z, draw_color.w
@@ -214,7 +213,7 @@ int main() {
                            static_cast<int>(triangleVertex3.x * 1000),
                            static_cast<int>(triangleVertex3.y * 1000));
 
-        std::vector<GLfloat> circlePoints;
+        std::vector<GLfloat> circlePoints; // 圆点集合
 
         int count4 = Bresenham::getInstance()
                 ->drawCircle(circlePoints,
@@ -237,6 +236,8 @@ int main() {
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
         glBindVertexArray(VAO);
+
+
         glDrawArrays(GL_POINTS, 0, !isShowCircle ? count1 + count2 + count3 : count4);
         ImGui::Render();
         ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
