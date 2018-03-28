@@ -47,8 +47,6 @@ int Bresenham::drawLine(vector<GLfloat> &pixi, int x0, int y0, int x1, int y1) {
     int p = 2 * dy - dx;
     int pointCounter = 0; // 点个数计数器
 
-
-
     do {
         this->addPoints(pixi,
                         isKBiggerThan1 ? y : x,
