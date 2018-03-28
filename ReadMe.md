@@ -4,7 +4,7 @@
 
 ## 如何运行
 
-`windows`环境下，打开`./cmake-build-debug/hw3.exe`即可运行。
+`windows`环境下，打开`./cmake-build-debug/hw3.exe`即可运行。若无此文件夹。可以根据`CMakeLists.txt`直接编译即可。
 
 ## 1. 把运行结果截图贴到报告里，并回答作业里提出的问题。
 
