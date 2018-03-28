@@ -48,7 +48,7 @@ int main() {
 #if __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
-    GLFWwindow *window = glfwCreateWindow(800, 600, "He Zhiyu 15331097", nullptr, nullptr);
+    GLFWwindow *window = glfwCreateWindow(800, 800, "He Zhiyu 15331097", nullptr, nullptr);
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
     gl3wInit();
@@ -59,7 +59,8 @@ int main() {
 
     // Setup style
     ImGui::StyleColorsDark();
-    ImVec4 clear_color = ImVec4(206.0f / 255.0f, 161.0f / 255.0f, 200.0f / 255.0f, 1.00f);
+    ImVec4 clear_color = ImVec4(49.0f / 255.0f, 57.0f / 255.0f, 88.0f / 255.0f, 1.00f);
+    ImVec4 draw_color = ImVec4(1.0f, 1.0f, 1.0f, 1.00f);
 
     /************************************************************
     *                  Shader Setup
@@ -128,6 +129,14 @@ int main() {
             0.0f, 0.0f, 0.0f
     };
 
+    /************************************************************
+    *                  Circle Setup
+    ************************************************************/
+
+    bool isShowCircle = false;
+    ImVec2 circleCenter = ImVec2(0.0f, 0.0f);
+    float circleRadius = 0.3f;
+
     // VBO
     unsigned int VBO;
     glGenBuffers(1, &VBO);
@@ -164,50 +173,61 @@ int main() {
         ImGui_ImplGlfwGL3_NewFrame();
 
         {
-            ImGui::Text("Change Color");
-            ImGui::ColorEdit3("Background Color", (float *) &clear_color);
-            ImGui::SliderFloat2("Vertex 1", (float *) &triangleVertex1, -1, 1);
-            ImGui::SliderFloat2("Vertex 2", (float *) &triangleVertex2, -1, 1);
-            ImGui::SliderFloat2("Vertex 3", (float *) &triangleVertex3, -1, 1);
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                         1000.0f / ImGui::GetIO().Framerate,
                         ImGui::GetIO().Framerate);
+            ImGui::ColorEdit3("Background Color", (float *) &clear_color);
+            ImGui::ColorEdit3("Draw Color", (float *) &draw_color);
+            ImGui::Checkbox(isShowCircle ? "show Circle" : "show Triple", &isShowCircle);
+            if (!isShowCircle) {
+                ImGui::SliderFloat2("Vertex 1", (float *) &triangleVertex1, -1, 1);
+                ImGui::SliderFloat2("Vertex 2", (float *) &triangleVertex2, -1, 1);
+                ImGui::SliderFloat2("Vertex 3", (float *) &triangleVertex3, -1, 1);
+            } else {
+                ImGui::SliderFloat2("Circle Center", (float *) &circleCenter, -1, 1);
+                ImGui::SliderFloat("Circle Radius", &circleRadius, 0, 1);
+            }
         }
 
-        std::vector<GLfloat> points;
+        std::vector<GLfloat> triplePoints;
 
-        std::vector<GLfloat> currentVertices = {
-                triangleVertex1.x, triangleVertex1.y, 0.0f,
-                0.0f, 0.0f, 0.0f,
-
-                triangleVertex2.x, triangleVertex2.y, 0.0f,
-                0.0f, 0.0f, 0.0f,
-
-                triangleVertex3.x, triangleVertex3.y, 0.0f,
-                0.0f, 0.0f, 0.0f
+        Bresenham::getInstance()->color = {
+                draw_color.x, draw_color.y, draw_color.z, draw_color.w
         };
 
         int count1 = Bresenham::getInstance()
-                ->drawLine(points,
+                ->drawLine(triplePoints,
                            static_cast<int>(triangleVertex1.x * 1000),
                            static_cast<int>(triangleVertex1.y * 1000),
                            static_cast<int>(triangleVertex2.x * 1000),
                            static_cast<int>(triangleVertex2.y * 1000));
         int count2 = Bresenham::getInstance()
-                ->drawLine(points,
+                ->drawLine(triplePoints,
                            static_cast<int>(triangleVertex1.x * 1000),
                            static_cast<int>(triangleVertex1.y * 1000),
                            static_cast<int>(triangleVertex3.x * 1000),
                            static_cast<int>(triangleVertex3.y * 1000));
         int count3 = Bresenham::getInstance()
-                ->drawLine(points,
+                ->drawLine(triplePoints,
                            static_cast<int>(triangleVertex2.x * 1000),
                            static_cast<int>(triangleVertex2.y * 1000),
                            static_cast<int>(triangleVertex3.x * 1000),
                            static_cast<int>(triangleVertex3.y * 1000));
 
+        std::vector<GLfloat> circlePoints;
+
+        int count4 = Bresenham::getInstance()
+                ->drawCircle(circlePoints,
+                             static_cast<int>(circleCenter.x * 1000),
+                             static_cast<int>(circleCenter.y * 1000),
+                             static_cast<int>(circleRadius * 1000));
+
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * points.size(), points.data(), GL_STATIC_DRAW);
+        if (!isShowCircle) {
+            glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * triplePoints.size(), triplePoints.data(), GL_STATIC_DRAW);
+        } else {
+            glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * circlePoints.size(), circlePoints.data(), GL_STATIC_DRAW);
+        }
         glBindVertexArray(VAO);
 
         // Rendering
@@ -217,7 +237,7 @@ int main() {
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
         glBindVertexArray(VAO);
-        glDrawArrays(GL_POINTS, 0, count1 + count2 + count3);
+        glDrawArrays(GL_POINTS, 0, !isShowCircle ? count1 + count2 + count3 : count4);
         ImGui::Render();
         ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(window);

@@ -37,14 +37,9 @@ int Bresenham::drawLine(vector<GLfloat> &pixi, int x0, int y0, int x1, int y1) {
 
 
     do {
-        float normalizedX = float(isKBiggerThan1 ? y : x) / 1000;
-        float normalizedY = float(isKBiggerThan1 ? x : y) / 1000;
-        pixi.emplace_back(normalizedX);
-        pixi.emplace_back(normalizedY);
-        pixi.emplace_back(0.0f);
-        pixi.emplace_back(1.0f);
-        pixi.emplace_back(1.0f);
-        pixi.emplace_back(1.0f);
+        this->addPoints(pixi,
+                        isKBiggerThan1 ? y : x,
+                        isKBiggerThan1 ? x : y);
         pointCounter++;
 
         if (p < 0) {
@@ -59,35 +54,42 @@ int Bresenham::drawLine(vector<GLfloat> &pixi, int x0, int y0, int x1, int y1) {
     return pointCounter;
 }
 
-int Bresenham::drawCircle(int x0, int y0, int r) {
+int Bresenham::drawCircle(vector<GLfloat> &pixi, int x0, int y0, int r) {
     int x = -r, y = 0;
     int pointCounter = 0; // 点个数计数器
     int error = 2 - 2 * r;
 
-//    glColor4f(this->color[0], this->color[1], this->color[2], this->color[3]);
-//    glBegin(GL_POINTS);
-//
-//
-//    do {
-//        glVertex2f(float(x0 - x) / 100, float(y0 + y) / 100); // 第一象限, 初值为最右的一点, 向上拓展
-//        glVertex2f(float(x0 - y) / 100, float(y0 - x) / 100); // 第二象限, 初值为最上一点, 向左拓展
-//        glVertex2f(float(x0 + x) / 100, float(y0 - y) / 100); // 第三象限, 初值为最左一点, 向下拓展
-//        glVertex2f(float(x0 + y) / 100, float(y0 + x) / 100); // 第四象限, 初值为最下一点, 向右拓展
-//        pointCounter += 4;
-//
-//        int currentError = error;
-//        if (currentError <= y) {
-//            y++;
-//            error += 2 * y + 1;
-//        }
-//
-//        if (currentError > x || currentError > y) {
-//            x++;
-//            error += 2 * x + 1;
-//        }
-//    } while (x < 0);
-//
-//    glEnd();
+    do {
+        this->addPoints(pixi, x0 - x, y0 + y); // 第一象限, 初值为最右的一点, 向上拓展
+        this->addPoints(pixi, x0 - y, y0 - x); // 第二象限, 初值为最上一点, 向左拓展
+        this->addPoints(pixi, x0 + x, y0 - y); // 第三象限, 初值为最左一点, 向下拓展
+        this->addPoints(pixi, x0 + y, y0 + x); // 第四象限, 初值为最下一点, 向右拓展
+        pointCounter += 4;
+
+        int currentError = error;
+        if (currentError <= y) {
+            y++;
+            error += 2 * y + 1;
+        }
+
+        if (currentError > x || currentError > y) {
+            x++;
+            error += 2 * x + 1;
+        }
+    } while (x < 0);
 
     return pointCounter;
+}
+
+void Bresenham::addPoints(std::vector<GLfloat> &pixi, int x, int y) {
+    pixi.emplace_back(this->normalize(x));
+    pixi.emplace_back(this->normalize(y));
+    pixi.emplace_back(0.0f);
+    pixi.emplace_back(this->color[0]);
+    pixi.emplace_back(this->color[1]);
+    pixi.emplace_back(this->color[2]);
+}
+
+float Bresenham::normalize(int target) {
+    return float(target) / this->scale;
 }

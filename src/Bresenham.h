@@ -13,12 +13,15 @@ public:
 
     int drawLine(std::vector<GLfloat> &pixi, int x0, int y0, int x1, int y1);
 
-    int drawCircle(int x0, int y0, int r);
+    int drawCircle(std::vector<GLfloat> &pixi, int x0, int y0, int r);
 
-private:
-    GLfloat color[4] = {
+    std::vector<GLfloat> color = {
             0.0f, 0.0f, 0.0f, 1.0f // black
     };
+
+    int scale = 1000;
+
+private:
 
     void swap(int *a, int *b) {
         int tmp = *a;
@@ -28,6 +31,10 @@ private:
 
 private:
     Bresenham() = default;
+
+    void addPoints(std::vector<GLfloat> &pixi, int x, int y);
+
+    float normalize(int target);
 
 };
 
