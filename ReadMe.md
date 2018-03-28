@@ -1,5 +1,7 @@
 # CG - HW3 - Draw line
 
+15331097, 何志宇
+
 ## 如何运行
 
 `windows`环境下，打开`./cmake-build-debug/hw3.exe`即可运行。
