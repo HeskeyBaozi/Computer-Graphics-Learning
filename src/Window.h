@@ -8,6 +8,7 @@
 
 #include <GL/gl3w.h>
 #include <GLFW/glfw3.h>
+#include <vector>
 #include <iostream>
 
 class Window {
@@ -17,6 +18,8 @@ public:
     ~Window();
 
     void update();
+
+    void drawPoints(std::vector<std::pair<GLfloat, GLfloat>> &pixi);
 
     bool isWindowClosed();
 

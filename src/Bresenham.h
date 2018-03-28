@@ -1,6 +1,7 @@
 #ifndef HW3_BRESENHAM_H
 #define HW3_BRESENHAM_H
 
+#include <GL/gl3w.h>
 #include <GLFW/glfw3.h>
 #include <cmath>
 #include <vector>
@@ -10,7 +11,7 @@ class Bresenham {
 public:
     static Bresenham *getInstance();
 
-    int drawLine(int x0, int y0, int x1, int y1);
+    int drawLine(std::vector<GLfloat> &pixi, int x0, int y0, int x1, int y1);
 
     int drawCircle(int x0, int y0, int r);
 

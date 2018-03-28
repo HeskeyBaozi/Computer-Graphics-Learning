@@ -10,12 +10,11 @@ Bresenham *Bresenham::getInstance() {
     return instance;
 }
 
-int Bresenham::drawLine(int x0, int y0, int x1, int y1) {
+int Bresenham::drawLine(vector<GLfloat> &pixi, int x0, int y0, int x1, int y1) {
 
     auto dx = static_cast<int>(std::abs(x1 - x0));
     auto dy = static_cast<int>(std::abs(y1 - y0));
 
-    vector<pair<float, float>> pixi;
 
     bool isKBiggerThan1 = false;
 
@@ -40,7 +39,12 @@ int Bresenham::drawLine(int x0, int y0, int x1, int y1) {
     do {
         float normalizedX = float(isKBiggerThan1 ? y : x) / 100;
         float normalizedY = float(isKBiggerThan1 ? x : y) / 100;
-        pixi.emplace_back(normalizedX, normalizedY);
+        pixi.emplace_back(normalizedX);
+        pixi.emplace_back(normalizedY);
+        pixi.emplace_back(0.0f);
+        pixi.emplace_back(1.0f);
+        pixi.emplace_back(1.0f);
+        pixi.emplace_back(1.0f);
         pointCounter++;
 
         if (p < 0) {
@@ -52,14 +56,6 @@ int Bresenham::drawLine(int x0, int y0, int x1, int y1) {
 
         x += cx;
     } while (x <= x1);
-
-    glColor4f(this->color[0], this->color[1], this->color[2], this->color[3]);
-    glBegin(GL_POINTS);
-
-    for (const auto &item:pixi) {
-        glVertex2f(item.first, item.second);
-    }
-    glEnd();
     return pointCounter;
 }
 
@@ -68,30 +64,30 @@ int Bresenham::drawCircle(int x0, int y0, int r) {
     int pointCounter = 0; // 点个数计数器
     int error = 2 - 2 * r;
 
-    glColor4f(this->color[0], this->color[1], this->color[2], this->color[3]);
-    glBegin(GL_POINTS);
-
-
-    do {
-        glVertex2f(float(x0 - x) / 100, float(y0 + y) / 100); // 第一象限, 初值为最右的一点, 向上拓展
-        glVertex2f(float(x0 - y) / 100, float(y0 - x) / 100); // 第二象限, 初值为最上一点, 向左拓展
-        glVertex2f(float(x0 + x) / 100, float(y0 - y) / 100); // 第三象限, 初值为最左一点, 向下拓展
-        glVertex2f(float(x0 + y) / 100, float(y0 + x) / 100); // 第四象限, 初值为最下一点, 向右拓展
-        pointCounter += 4;
-
-        int currentError = error;
-        if (currentError <= y) {
-            y++;
-            error += 2 * y + 1;
-        }
-
-        if (currentError > x || currentError > y) {
-            x++;
-            error += 2 * x + 1;
-        }
-    } while (x < 0);
-
-    glEnd();
+//    glColor4f(this->color[0], this->color[1], this->color[2], this->color[3]);
+//    glBegin(GL_POINTS);
+//
+//
+//    do {
+//        glVertex2f(float(x0 - x) / 100, float(y0 + y) / 100); // 第一象限, 初值为最右的一点, 向上拓展
+//        glVertex2f(float(x0 - y) / 100, float(y0 - x) / 100); // 第二象限, 初值为最上一点, 向左拓展
+//        glVertex2f(float(x0 + x) / 100, float(y0 - y) / 100); // 第三象限, 初值为最左一点, 向下拓展
+//        glVertex2f(float(x0 + y) / 100, float(y0 + x) / 100); // 第四象限, 初值为最下一点, 向右拓展
+//        pointCounter += 4;
+//
+//        int currentError = error;
+//        if (currentError <= y) {
+//            y++;
+//            error += 2 * y + 1;
+//        }
+//
+//        if (currentError > x || currentError > y) {
+//            x++;
+//            error += 2 * x + 1;
+//        }
+//    } while (x < 0);
+//
+//    glEnd();
 
     return pointCounter;
 }
