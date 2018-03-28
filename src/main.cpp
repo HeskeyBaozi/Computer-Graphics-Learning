@@ -7,8 +7,10 @@
 #include "imgui_impl_glfw_gl3.h"
 #include <cstdio>
 #include <iostream>
+#include <GL/gl3w.h>
+#include <GLFW/glfw3.h>
 #include "Window.h"
-#include "Shader.h"
+#include "Bresenham.h"
 
 #define V_GLSL "D:\\CLionProjects\\hw3\\src\\shaders\\v.glsl"
 #define F_GLSL "D:\\CLionProjects\\hw3\\src\\shaders\\f.glsl"
@@ -21,6 +23,7 @@ int main() {
      ************************************************************/
 
     Window window(800, 600, "HW3 - Hezhiyu 15331097");
+    gl3wInit();
     if (!window.isSuccessful) {
         std::cout << "Create Window Object Failed" << std::endl;
         return -1;
@@ -32,55 +35,14 @@ int main() {
 
     // Setup style
     ImGui::StyleColorsDark();
-    ImVec4 clear_color = ImVec4(206.0f / 255.0f, 161.0f / 255.0f, 200.0f / 255.0f, 1.00f);
+    ImVec4 clear_color = ImVec4(255.0f / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f, 1.00f);
 
 
-    /************************************************************
-     *                  Triangle Setup
-     ************************************************************/
+    ImVec2 lineStart = ImVec2(-0.5f, -0.5f);
+    ImVec2 lineEnd = ImVec2(0.0f, 0.5f);
 
-    ImVec4 triangleVertex1 = ImVec4(1.0f, 0.0f, 0.0f, 1.0f); // default: Red
-    ImVec4 triangleVertex2 = ImVec4(0.0f, 1.0f, 0.0f, 1.0f); // default: Green
-    ImVec4 triangleVertex3 = ImVec4(0.0f, 0.0f, 1.0f, 1.0f); // default: Blue
-
-    // vertices: [x, y, z, r, g, b]
-    float vertices[] = {
-            -0.5f, -0.5f, 0.0f,
-            triangleVertex1.x, triangleVertex1.y, triangleVertex1.z,  // 左下
-
-            0.5f, -0.5f, 0.0f,
-            triangleVertex2.x, triangleVertex2.y, triangleVertex2.z,  // 右下
-
-            0.0f, 0.5f, 0.0f,
-            triangleVertex3.x, triangleVertex3.y, triangleVertex3.z   // 正上
-    };
-
-    // VBO
-    unsigned int VBO;
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // VAO
-    unsigned int VAO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // location === 0
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) nullptr);
-    glEnableVertexAttribArray(0);
-
-    // location === 1
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) (3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    /************************************************************
-    *                  Shader Setup
-    ************************************************************/
-    Shader shader(V_GLSL, F_GLSL);
-    shader.use();
+    ImVec2 CircleCenter = ImVec2(0.0f, 0.0f);
+    float CircleRadius = 0.3f;
 
 
     /************************************************************
@@ -88,33 +50,27 @@ int main() {
      ************************************************************/
 
     while (!window.isWindowClosed()) {
+
+        int count = Bresenham::getInstance()->drawLine(static_cast<int>(lineStart.x * 100),
+                                                       static_cast<int>(lineStart.y * 100),
+                                                       static_cast<int>(lineEnd.x * 100),
+                                                       static_cast<int>(lineEnd.y * 100));
+
+        int count2 = Bresenham::getInstance()->drawCircle(static_cast<int>(CircleCenter.x * 100),
+                                                          static_cast<int>(CircleCenter.y * 100),
+                                                          static_cast<int>(CircleRadius * 100));
+
         ImGui_ImplGlfwGL3_NewFrame();
 
         {
             ImGui::Text("Change Color");
             ImGui::ColorEdit3("Background Color", (float *) &clear_color);
-            ImGui::ColorEdit3("Left Color", (float *) &triangleVertex1);
-            ImGui::ColorEdit3("Right Color", (float *) &triangleVertex2);
-            ImGui::ColorEdit3("Top Color", (float *) &triangleVertex3);
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                         1000.0f / ImGui::GetIO().Framerate,
                         ImGui::GetIO().Framerate);
         }
 
-        float currentVertices[] = {
-                -0.5f, -0.5f, 0.0f,
-                triangleVertex1.x, triangleVertex1.y, triangleVertex1.z,  // 左下
 
-                0.5f, -0.5f, 0.0f,
-                triangleVertex2.x, triangleVertex2.y, triangleVertex2.z,  // 右下
-
-                0.0f, 0.5f, 0.0f,
-                triangleVertex3.x, triangleVertex3.y, triangleVertex3.z   // 正上
-        };
-
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(currentVertices), currentVertices, GL_STATIC_DRAW);
-        glBindVertexArray(VAO);
 
         // Rendering
         int display_w, display_h;
@@ -122,11 +78,11 @@ int main() {
         glViewport(0, 0, display_w, display_h);
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
         ImGui::Render();
         ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
         window.update();
+
+
     }
 
     // Cleanup

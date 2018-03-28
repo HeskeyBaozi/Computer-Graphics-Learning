@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.9)
 project(hw3)
 
 set(CMAKE_CXX_STANDARD 11)
-set(ENTRY src/main.cpp src/imgui_impl_glfw_gl3.cpp src/Window.cpp src/Window.h src/Shader.cpp src/Shader.h)
+set(ENTRY src/main.cpp src/imgui_impl_glfw_gl3.cpp src/Window.cpp src/Window.h src/Shader.cpp src/Shader.h src/Bresenham.cpp src/Bresenham.h)
 set(LIBS
         ${PROJECT_SOURCE_DIR}/include/glad/glad.c
         ${PROJECT_SOURCE_DIR}/include/GL/gl3w.c

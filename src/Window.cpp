@@ -11,7 +11,6 @@ Window::Window(const int width, const int height, const char *name) {
     }
 
     glfwMakeContextCurrent(this->window);
-    gl3wInit();
 }
 
 Window::~Window() = default;
