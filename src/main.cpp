@@ -1,5 +1,5 @@
 /**
- * CG - HW4
+ * CG - HW5
  * @author 何志宇<hezhiyu233@foxmail.com> 15331097
  */
 
@@ -68,7 +68,7 @@ int main() {
 
     // Setup style
     ImGui::StyleColorsDark();
-    ImVec4 clear_color = ImVec4(49.0f / 255.0f, 57.0f / 255.0f, 88.0f / 255.0f, 1.00f);
+    ImVec4 clear_color = ImVec4(93.0f / 255.0f, 101.0f / 255.0f, 131.0f / 255.0f, 1.00f);
 
     glEnable(GL_DEPTH_TEST);
     Shader ourShader(vertexShaderSource, fragmentShaderSource);
@@ -117,11 +117,23 @@ int main() {
             -0.5f, 0.5f, -0.5f, 0.1f, 0.1f, 0.1f,
     };
 
-    glm::vec3 cubePosition = glm::vec3(0.0f, 0.0f, 0.0f);
+    glm::vec3 cubePosition = glm::vec3(-1.5f, 0.5f, -1.5f);
     float angle = 0.0f;
     float scale = 45.0f;
     bool isAnimate = false;
-    int frameCount = 0;
+    bool isPerspective = true;
+
+
+    float lookAtRadius = 10.0f;
+
+    // ortho arguments
+    // glm::ortho(-2.0f, 2.0f, -2.0f, 2.0f, 0.1f, 10.0f);
+    float left = -2.0f;
+    float right = 2.0f;
+    float bottom = -2.0f;
+    float top = 2.0f;
+    float nearArgs = 0.1f;
+    float farArgs = 10.0f;
 
     // VBO
     unsigned int VBO;
@@ -161,33 +173,53 @@ int main() {
                         ImGui::GetIO().Framerate);
             ImGui::ColorEdit3("Background Color", (float *) &clear_color);
             ImGui::SliderFloat3("Cube Position", (float *) &cubePosition, -1, 1);
+            ImGui::Checkbox("View Changing", &isAnimate);
+            ImGui::SliderFloat("Look At Radius", &lookAtRadius, 1.0f, 100.0f);
+            ImGui::Checkbox("isPerspective", &isPerspective);
             ImGui::SliderFloat("Angle", &angle, 0, 360);
             ImGui::SliderFloat("Scale", &scale, 1, 180);
-            ImGui::Checkbox("Animate Rotate", &isAnimate);
+            if (!isPerspective) {
+                ImGui::SliderFloat("left", &left, -5, 5);
+                ImGui::SliderFloat("right", &right, -5, 5);
+                ImGui::SliderFloat("bottom", &bottom, -5, 5);
+                ImGui::SliderFloat("top", &top, -5, 5);
+                ImGui::SliderFloat("near", &nearArgs, -5, 5);
+                ImGui::SliderFloat("far", &farArgs, -10, 10);
+            }
         }
 
         ourShader.use();
 
+        // transformations
         glm::mat4 view;
+        if (isAnimate) {
+            auto camX = static_cast<float>(sin(glfwGetTime()) * lookAtRadius);
+            auto camZ = static_cast<float>(cos(glfwGetTime()) * lookAtRadius);
+            view = glm::lookAt(glm::vec3(camX, 0.0f, camZ), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        } else {
+            view = glm::translate(view, glm::vec3(0.0f, 1.0f, -5.0f));
+        }
+
+
         glm::mat4 projection;
-        projection = glm::perspective(glm::radians(scale), (float) SCREEN_WIDTH / (float) SCREEN_HEIGHT, 0.1f, 100.0f);
-        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+        if (isPerspective) {
+            projection = glm::perspective(glm::radians(scale), (float) SCREEN_WIDTH / (float) SCREEN_HEIGHT, 0.1f,
+                                          100.0f);
+        } else {
+            projection = glm::ortho(left, right, bottom, top, nearArgs, farArgs);
+        }
+
+
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
-
-        // animate
-        if (isAnimate) {
-            angle = (frameCount++) % 360;
-            if (frameCount > 360) {
-                frameCount = 0;
-            }
-        }
 
         glBindVertexArray(VAO);
 
         {
             glm::mat4 model;
-            model = glm::translate(model, cubePosition);
+            if (!isAnimate) {
+                model = glm::translate(model, cubePosition);
+            }
             model = glm::rotate(model, glm::radians(angle), glm::vec3(0.0f, 1.0f, 1.0f));
             ourShader.setMat4("model", model);
             glDrawArrays(GL_TRIANGLES, 0, 36);
