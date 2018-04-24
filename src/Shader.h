@@ -1,5 +1,5 @@
-#ifndef HW4_SHADER_H
-#define HW4_SHADER_H
+#ifndef HW6_SHADER_H
+#define HW6_SHADER_H
 
 #include <GL/gl3w.h>
 #include <GLFW/glfw3.h>
@@ -163,4 +163,4 @@ private:
 };
 
 
-#endif //HW4_SHADER_H
+#endif //HW6_SHADER_H
