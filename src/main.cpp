@@ -20,9 +20,13 @@
 const unsigned int SCREEN_WIDTH = 1200;
 const unsigned int SCREEN_HEIGHT = 800;
 
-// 光照颜色着色器
+// 光照颜色着色器 - 冯氏光照模型
 const char *lightVertexColors = "#version 330 core\n"
         "layout (location = 0) in vec3 aPos;\n"
+        "layout (location = 1) in vec3 aNormal;\n"
+        "\n"
+        "out vec3 FragPos;\n"
+        "out vec3 Normal;\n"
         "\n"
         "uniform mat4 model;\n"
         "uniform mat4 view;\n"
@@ -30,22 +34,96 @@ const char *lightVertexColors = "#version 330 core\n"
         "\n"
         "void main()\n"
         "{\n"
-        "\tgl_Position = projection * view * model * vec4(aPos, 1.0);\n"
+        "    FragPos = vec3(model * vec4(aPos, 1.0));\n"
+        "    Normal = mat3(transpose(inverse(model))) * aNormal;  \n"
+        "    \n"
+        "    gl_Position = projection * view * vec4(FragPos, 1.0);\n"
         "}";
 
+// 光照颜色着色器 - 冯氏光照模型
 const char *lightFragmentColors = "#version 330 core\n"
         "out vec4 FragColor;\n"
+        "\n"
+        "in vec3 Normal;  \n"
+        "in vec3 FragPos;  \n"
         "  \n"
-        "uniform vec3 objectColor;\n"
+        "uniform vec3 lightPos; \n"
+        "uniform vec3 viewPos; \n"
         "uniform vec3 lightColor;\n"
+        "uniform vec3 objectColor;\n"
+        "uniform float ambientStrength;\n"
+        "uniform float diffuseStrength;\n"
+        "uniform float specularStrength;\n"
+        "uniform int shininess;\n"
         "\n"
         "void main()\n"
         "{\n"
-        "    float ambientStrength = 0.1;\n"
+        "    // ambient\n"
         "    vec3 ambient = ambientStrength * lightColor;\n"
-        "\n"
-        "    vec3 result = ambient * objectColor;\n"
+        "  \t\n"
+        "    // diffuse \n"
+        "    vec3 norm = normalize(Normal);\n"
+        "    vec3 lightDir = normalize(lightPos - FragPos);\n"
+        "    float diff = max(dot(norm, lightDir), 0.0);\n"
+        "    vec3 diffuse = diffuseStrength * diff * lightColor;\n"
+        "    \n"
+        "    // specular\n"
+        "    vec3 viewDir = normalize(viewPos - FragPos);\n"
+        "    vec3 reflectDir = reflect(-lightDir, norm);  \n"
+        "    float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);\n"
+        "    vec3 specular = specularStrength * spec * lightColor;  \n"
+        "        \n"
+        "    vec3 result = (ambient + diffuse + specular) * objectColor;\n"
         "    FragColor = vec4(result, 1.0);\n"
+        "} ";
+
+// 光照颜色着色器 - Gouraud着色
+const char *lightVertexColorsG = "#version 330 core\n"
+        "layout (location = 0) in vec3 aPos;\n"
+        "layout (location = 1) in vec3 aNormal;\n"
+        "\n"
+        "out vec3 LightingColor;\n"
+        "\n"
+        "uniform vec3 lightPos;\n"
+        "uniform vec3 viewPos;\n"
+        "uniform vec3 lightColor;\n"
+        "uniform float ambientStrength;\n"
+        "uniform float diffuseStrength;\n"
+        "uniform float specularStrength;\n"
+        "uniform int shininess;\n"
+        "\n"
+        "uniform mat4 model;\n"
+        "uniform mat4 view;\n"
+        "uniform mat4 projection;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "    gl_Position = projection * view * model * vec4(aPos, 1.0);\n"
+        "    vec3 Position = vec3(model * vec4(aPos, 1.0));\n"
+        "    vec3 Normal = mat3(transpose(inverse(model))) * aNormal;\n"
+        "    vec3 ambient = ambientStrength * lightColor;\n"
+        "    vec3 norm = normalize(Normal);\n"
+        "    vec3 lightDir = normalize(lightPos - Position);\n"
+        "    float diff = max(dot(norm, lightDir), 0.0);\n"
+        "    vec3 diffuse = diffuseStrength * diff * lightColor;\n"
+        "    vec3 viewDir = normalize(viewPos - Position);\n"
+        "    vec3 reflectDir = reflect(-lightDir, norm);  \n"
+        "    float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);\n"
+        "    vec3 specular = specularStrength * spec * lightColor;      \n"
+        "\n"
+        "    LightingColor = ambient + diffuse + specular;\n"
+        "}";
+
+const char *lightFragmentColorsG = "#version 330 core\n"
+        "out vec4 FragColor;\n"
+        "\n"
+        "in vec3 LightingColor; \n"
+        "\n"
+        "uniform vec3 objectColor;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "   FragColor = vec4(LightingColor * objectColor, 1.0);\n"
         "}";
 
 // 光源颜色着色器
@@ -66,7 +144,7 @@ const char *lampFragmentColors = "#version 330 core\n"
         "\n"
         "void main()\n"
         "{\n"
-        "    FragColor = vec4(1.0); // set alle 4 vector values to 1.0\n"
+        "    FragColor = vec4(1.0);\n"
         "}";
 
 // 镜头配置
@@ -82,6 +160,7 @@ float lastFrame = 0.0f;
 
 // GUI 切换
 bool isFPS = true;
+bool isPhone = true;
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 
@@ -128,47 +207,53 @@ int main() {
     glEnable(GL_DEPTH_TEST);
 
     // 构建和编译着色器
-    Shader lightShader(lightVertexColors, lightFragmentColors);
+    Shader lightShader(lightVertexColors, lightFragmentColors); // Phone
+    Shader lightShaderG(lightVertexColorsG, lightFragmentColorsG); // Gouraud
     Shader lampShader(lampVertexColors, lampFragmentColors);
 
     // 渲染初始场景的顶点数据，一个立方体
     std::vector<GLfloat> vertices = {
-            -0.5f, -0.5f, -0.5f,
-            0.5f, -0.5f, -0.5f,
-            0.5f, 0.5f, -0.5f,
-            0.5f, 0.5f, -0.5f,
-            -0.5f, 0.5f, -0.5f,
-            -0.5f, -0.5f, -0.5f,
-            -0.5f, -0.5f, 0.5f,
-            0.5f, -0.5f, 0.5f,
-            0.5f, 0.5f, 0.5f,
-            0.5f, 0.5f, 0.5f,
-            -0.5f, 0.5f, 0.5f,
-            -0.5f, -0.5f, 0.5f,
-            -0.5f, 0.5f, 0.5f,
-            -0.5f, 0.5f, -0.5f,
-            -0.5f, -0.5f, -0.5f,
-            -0.5f, -0.5f, -0.5f,
-            -0.5f, -0.5f, 0.5f,
-            -0.5f, 0.5f, 0.5f,
-            0.5f, 0.5f, 0.5f,
-            0.5f, 0.5f, -0.5f,
-            0.5f, -0.5f, -0.5f,
-            0.5f, -0.5f, -0.5f,
-            0.5f, -0.5f, 0.5f,
-            0.5f, 0.5f, 0.5f,
-            -0.5f, -0.5f, -0.5f,
-            0.5f, -0.5f, -0.5f,
-            0.5f, -0.5f, 0.5f,
-            0.5f, -0.5f, 0.5f,
-            -0.5f, -0.5f, 0.5f,
-            -0.5f, -0.5f, -0.5f,
-            -0.5f, 0.5f, -0.5f,
-            0.5f, 0.5f, -0.5f,
-            0.5f, 0.5f, 0.5f,
-            0.5f, 0.5f, 0.5f,
-            -0.5f, 0.5f, 0.5f,
-            -0.5f, 0.5f, -0.5f,
+            -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+            0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+            0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+            0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+            -0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+            -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+
+            -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+            0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+            0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+            0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+            -0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+            -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+
+            -0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
+            -0.5f, 0.5f, -0.5f, -1.0f, 0.0f, 0.0f,
+            -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f,
+            -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f,
+            -0.5f, -0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
+            -0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
+
+            0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
+            0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+            0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+            0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+            0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
+            0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
+
+            -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f,
+            0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f,
+            0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f,
+            0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f,
+            -0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f,
+            -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f,
+
+            -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+            0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+            0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
+            0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
+            -0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
+            -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f
     };
 
     // 构造立方体
@@ -182,8 +267,11 @@ int main() {
     glBindVertexArray(targetVAO);
 
     // 立方体的位置属性
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT), (void *) 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GL_FLOAT), (void *) 0);
     glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GL_FLOAT), (void *) (3 * sizeof(GL_FLOAT)));
+    glEnableVertexAttribArray(1);
 
     // 构造灯光
     unsigned int lightVAO;
@@ -198,6 +286,15 @@ int main() {
     // 灯光位置参数
     glm::vec3 lightPosition(1.2f, 1.0f, 2.0f);
 
+    // 冯氏参数
+    float ambientStrength = 0.1f; // 环境光照系数
+    float diffuseStrength = 1.0f; // 漫反射光照系数
+    float specularStrength = 0.5f; // 镜面光照系数
+    int shininess = 32;
+
+    // 物体参数
+    glm::vec3 objectColor = glm::vec3(175.0f, 215.0f, 58.0f) / 255.0f;
+
     // GUI配置
     ImGui::CreateContext();
     ImGui_ImplGlfwGL3_Init(window, true);
@@ -210,8 +307,16 @@ int main() {
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                     1000.0f / ImGui::GetIO().Framerate,
                     ImGui::GetIO().Framerate);
+        ImGui::ColorEdit3("Object Color", (float *) &objectColor);
         ImGui::SliderFloat3("Light Position", (float *) &lightPosition, -5, 5);
         ImGui::SliderFloat3("Camera Position", (float *) &camera.Position, -5, 5);
+        ImGui::Checkbox("is FPS Mode", &isFPS);
+        ImGui::Text("Current Model: %s", isPhone ? "Phone" : "Gouraud");
+        ImGui::Checkbox("Change Model", &isPhone);
+        ImGui::SliderFloat("ambientStrength", &ambientStrength, 0.0f, 1.0f);
+        ImGui::SliderFloat("diffuseStrength", &diffuseStrength, 0.0f, 1.0f);
+        ImGui::SliderFloat("specularStrength", &specularStrength, 0.0f, 1.0f);
+        ImGui::SliderInt("shininess", &shininess, 2, 256);
         ImGui::Render();
         ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
     };
@@ -220,7 +325,7 @@ int main() {
     // 主循环
     while (!glfwWindowShouldClose(window)) {
 
-        float currentFrame = static_cast<float>(glfwGetTime());
+        auto currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
@@ -229,9 +334,17 @@ int main() {
         glClearColor(0.1f, 0.1f, 0.1f, 0.1f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        lightShader.use();
-        lightShader.setVec3("objectColor", 1.0f, 0.6f, 0.6f);
-        lightShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+        Shader target = isPhone ? lightShader : lightShaderG;
+
+        target.use();
+        target.setVec3("objectColor", objectColor[0], objectColor[1], objectColor[2]);
+        target.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+        target.setVec3("lightPos", lightPosition);
+        target.setVec3("viewPos", camera.Position);
+        target.setFloat("ambientStrength", ambientStrength);
+        target.setFloat("diffuseStrength", diffuseStrength);
+        target.setFloat("specularStrength", specularStrength);
+        target.setInt("shininess", shininess);
 
         // 视图投影变换
         glm::mat4 projection = glm::perspective(
@@ -240,12 +353,12 @@ int main() {
                 0.1f, 100.0f
         );
         glm::mat4 view = camera.GetViewMatrix();
-        lightShader.setMat4("projection", projection);
-        lightShader.setMat4("view", view);
+        target.setMat4("projection", projection);
+        target.setMat4("view", view);
 
         // 世界视图变换
         glm::mat4 model;
-        lightShader.setMat4("model", model);
+        target.setMat4("model", model);
 
         // 绘制立方体, 使用三角形来拼接
         glBindVertexArray(targetVAO);
