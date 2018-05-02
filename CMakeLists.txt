@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.9)
-project(hw6)
+project(hw7)
 
 set(CMAKE_CXX_STANDARD 11)
 set(ENTRY src/main.cpp src/imgui_impl_glfw_gl3.cpp src/Shader.h src/Camera.h)
@@ -17,5 +17,5 @@ include_directories(
 
 link_directories(${PROJECT_SOURCE_DIR}/lib)
 
-add_executable(hw6 ${LIBS} ${ENTRY})
-target_link_libraries(hw6 glfw3 opengl32)
+add_executable(hw7 ${LIBS} ${ENTRY})
+target_link_libraries(hw7 glfw3 opengl32)
